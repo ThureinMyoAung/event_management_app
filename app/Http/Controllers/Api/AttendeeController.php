@@ -12,6 +12,13 @@ use Illuminate\Http\Request;
 class AttendeeController extends Controller
 {
 
+
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum')->except(['index', 'show', 'update']);
+    }
+
+
     public function index(Event $event)
     {
         $attendee = $event->attendees()->latest();
@@ -39,8 +46,9 @@ class AttendeeController extends Controller
 
 
 
-    public function destroy(string $event, Attendee $attendee)
+    public function destroy(Event $event, Attendee $attendee)
     {
+        $this->authorize('delete-attendee', '[$event,$attendee]');
         $attendee->delete();
         // return response()->json([
         //     'message' => 'Attendee deleted successfully'

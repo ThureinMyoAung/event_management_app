@@ -7,13 +7,21 @@ use App\Http\Resources\EventResource;
 use App\Http\Traits\CanLoadRelationships;
 use App\Models\Event;
 use Dotenv\Util\Str;
+
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class EventController extends Controller
 {
     use CanLoadRelationships;
 
     private array $relations = ['user', 'attendees', 'attendees.user'];
+
+
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum')->except(['index', 'show']);
+    }
 
     public function index()
     {
@@ -35,7 +43,7 @@ class EventController extends Controller
                 'start_time' => 'required|date',
                 'end_time' => 'required|date|after:start_time'
             ]),
-            'user_id' => 1
+            'user_id' => $request->user()->id
         ]);
         return new EventResource($this->loadRelationships($event));
     }
@@ -52,6 +60,12 @@ class EventController extends Controller
      */
     public function update(Request $request, Event $event)
     {
+        // if (Gate::denies('update-event', $event)) {
+        //     abort(403, 'You are not authorized to update this post.');
+        // };
+        $this->authorize('update-event', $event);
+
+
         $event->update(
             $request->validate([
                 'name' => 'sometimes|string|max:255',
@@ -68,6 +82,7 @@ class EventController extends Controller
      */
     public function destroy(Event $event)
     {
+
         $event->delete();
         return response(status: 204);
         // return response()->json([
